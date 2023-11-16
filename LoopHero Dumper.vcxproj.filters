@@ -108,4 +108,7 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="rm_camp_object_create_events.txt" />
+  </ItemGroup>
 </Project>

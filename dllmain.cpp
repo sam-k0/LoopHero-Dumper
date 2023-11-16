@@ -9,6 +9,8 @@
 #include <iterator>
 #define _CRT_SECURE_NO_WARNINGS
 
+bool active = false;
+
 // Unload
 YYTKStatus PluginUnload()
 {
@@ -30,8 +32,6 @@ YYTKStatus ExecuteCodeCallback(YYTKCodeEvent* codeEvent, void*)
     if (!codeObj->i_pName)
         return YYTK_INVALIDARG;
 
-    // Original event
-    //codeEvent->Call(selfInst, otherInst, codeObj, std::get<3>(codeEvent->Arguments()), std::get<4>(codeEvent->Arguments()));
 
     if (Misc::StringHasSubstr(codeObj->i_pName, "gml_Room_"))
     {
@@ -47,10 +47,19 @@ YYTKStatus ExecuteCodeCallback(YYTKCodeEvent* codeEvent, void*)
 
         Misc::Print("Gamespeed: " + std::to_string(static_cast<double>(gamespeedmillis)));
         
+        Misc::CallBuiltin("game_set_speed", selfInst, otherInst, { 1.0, 1.0 });
+
+        active = true;
     }
-
-
-    
+    else if( Misc::StringHasSubstr(codeObj->i_pName, "gml_Object") && ( Misc::StringHasSubstr(codeObj->i_pName, "create") || Misc::StringHasSubstr(codeObj->i_pName, "Create")))
+    {
+        if(active)
+        {
+            Misc::Print(codeObj->i_pName + std::string(" ") + std::to_string(selfInst->i_id) );
+            Misc::AddToVectorNoDuplicates(codeObj->i_pName, &obj_create_events);
+        }
+        
+    }
    
     return YYTK_OK;
 }
@@ -77,6 +86,26 @@ DllExport YYTKStatus PluginEntry(
     return YYTK_OK; // Successful PluginEntry.
 }
 
+DWORD WINAPI Menu(HINSTANCE hModule)
+{
+    while (true)
+    {
+        Sleep(50);
+        if (GetAsyncKeyState(VK_NUMPAD0))
+        {
+            Misc::Print("Dumping to file!");
+            Misc::VectorToFile(&obj_create_events);
+            Sleep(300);
+        }
+        if (GetAsyncKeyState(VK_NUMPAD1))
+        {
+            Misc::Print("Resetting event vector");
+            obj_create_events.clear();
+            Sleep(300);
+        }
+    }
+}
+
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
                        LPVOID lpReserved
@@ -85,6 +114,8 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
+        DllHandle = hModule;
+        CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)Menu, NULL, 0, NULL); // For the input
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:
     case DLL_PROCESS_DETACH:

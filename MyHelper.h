@@ -17,6 +17,8 @@ std::string gPluginName = "Dumper";
 YYTKPlugin* gThisPlugin = nullptr;
 CallbackAttributes_t* callbackAttr = nullptr;
 
+std::vector<std::string> obj_create_events; // holds all strings of code events that got triggered
+int gDumpNum = 0;
 
 
 
@@ -55,6 +57,21 @@ namespace Misc {
         else {
             return false;
         }
+    }
+
+    void VectorToFile(std::vector<std::string>* v)
+    {
+        std::string fname = "./event_dump_" + std::to_string(gDumpNum) + ".txt";
+        while (FileExists(fname))
+        {
+            fname = "./event_dump_" + std::to_string(gDumpNum) + ".txt";
+            gDumpNum++;
+        }
+
+        Print("Dumping to file " + fname, CLR_RED);
+        std::ofstream ofile(fname);
+        std::ostream_iterator<std::string> oiter(ofile, "\n");
+        std::copy(std::begin(*v), std::end(*v), oiter);
     }
 
     // checks if a string s contains a substring subs
@@ -137,7 +154,6 @@ namespace Misc {
             }
         }
     }
-
 
     const RefDynamicArrayOfRValue* ResolveArray(YYRValue var)
     {

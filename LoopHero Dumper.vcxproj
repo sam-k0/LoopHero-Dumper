@@ -186,6 +186,9 @@
     <ClInclude Include="SDK\Structures\Undocumented\YYObjectBase\YYObjectBase.hpp" />
     <ClInclude Include="SDK\Structures\Undocumented\YYVAR\YYVAR.hpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="rm_camp_object_create_events.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
