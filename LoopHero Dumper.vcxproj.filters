@@ -107,6 +107,18 @@
     <ClInclude Include="MyHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="LHSprites.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LHObjects.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Filesystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="rm_camp_object_create_events.txt" />

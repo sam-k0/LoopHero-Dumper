@@ -10,6 +10,7 @@
 // YYTK 
 #define YYSDK_PLUGIN // Declare the following code as a plugin
 #include "SDK/SDK.hpp"
+#include "Filesystem.h"
 
 HINSTANCE DllHandle; // Self modhandle
 
@@ -49,20 +50,10 @@ namespace Misc {
     }
 
 
-    inline bool FileExists(const std::string& name) {
-        if (FILE* file = fopen(name.c_str(), "r")) {
-            fclose(file);
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-
     void VectorToFile(std::vector<std::string>* v)
     {
         std::string fname = "./event_dump_" + std::to_string(gDumpNum) + ".txt";
-        while (FileExists(fname))
+        while (Filesys::FileExists(fname))
         {
             fname = "./event_dump_" + std::to_string(gDumpNum) + ".txt";
             gDumpNum++;
@@ -109,18 +100,6 @@ namespace Misc {
         return str.compare(str.length() - suffix.length(), suffix.length(), suffix) == 0;
     }
 
-    std::string GetCurrentDir() // Returns EXE directory
-    {
-        char cCurrentPath[FILENAME_MAX]; // get working directory into buffer
-        if (!_getcwd(cCurrentPath, sizeof(cCurrentPath)))
-            exit(-1);
-        cCurrentPath[sizeof(cCurrentPath) - 1] = '\0'; // not really required
-
-        char* s = cCurrentPath; // save path from buffer into currentpath chararr
-        std::string str(s);
-        //free(s);
-        return str;
-    }
 
     std::string Join(std::vector<std::string> strings)
     {
@@ -165,7 +144,7 @@ namespace Misc {
     YYRValue CallBuiltin(const std::string name, CInstance* self, CInstance* other,const std::vector<YYRValue> args)
     {
         YYRValue var;
-        CallBuiltin(var, "variable_instance_get_names", self, other, args);
+        CallBuiltin(var, name, self, other, args);
         return var;
     }
 }

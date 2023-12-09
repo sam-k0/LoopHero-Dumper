@@ -163,6 +163,10 @@
     <ClCompile Include="SDK\Structures\Documented\YYRValue\YYRValue.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Assets.h" />
+    <ClInclude Include="Filesystem.h" />
+    <ClInclude Include="LHObjects.h" />
+    <ClInclude Include="LHSprites.h" />
     <ClInclude Include="MyHelper.h" />
     <ClInclude Include="SDK\Enums\Enums.hpp" />
     <ClInclude Include="SDK\FwdDecls\FwdDecls.hpp" />

@@ -102,6 +102,11 @@ void PopFileOpenDialog(const std::string& WindowTitle, const std::string& Initia
 
 void PrintMessage(Color color, const char* fmt, ...)
 {
+	if (color == NULL)
+	{
+		color = Color::CLR_DEFAULT;
+	}
+
 	constexpr size_t MaxStringLength = 1024;
 
 	if (strlen(fmt) >= MaxStringLength)
