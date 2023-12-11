@@ -30,7 +30,7 @@ void addExternalSprite()
     Assets::SpriteReplace(LHSpriteEnum::s_hero_idle_rytsar, "Assets\\arba_idle.png", 1, true, false, 0.0, 0.0);
     Assets::SpriteReplace(LHSpriteEnum::s_hero_charge_rytsar, "Assets\\arba_idle.png", 1, true, false, 0.0, 0.0);
     Assets::SpriteReplace(LHSpriteEnum::s_hero_hurt_rytsar, "Assets\\arba_hurt.png", 1, true, false, 0.0, 0.0);
-
+    Assets::SpriteReplace(LHSpriteEnum::s_hero_warrior, "Assets\\arba_map.png", 4, true, false, 0.0, 0.0);
 }
 
 void mapToFile(std::map<int, std::string> arg, std::string fname, std::string enumName)
@@ -203,7 +203,7 @@ DllExport YYTKStatus PluginEntry(
     PluginAttributes_t* pluginAttributes = nullptr;
     if (PmGetPluginAttributes(gThisPlugin, pluginAttributes) == YYTK_OK)
     {
-        PmCreateCallback(pluginAttributes, callbackAttr, reinterpret_cast<FNEventHandler>(ExecuteCodeCallback), EVT_CODE_EXECUTE, nullptr);
+       // PmCreateCallback(pluginAttributes, callbackAttr, reinterpret_cast<FNEventHandler>(ExecuteCodeCallback), EVT_CODE_EXECUTE, nullptr);
     }
 
 
