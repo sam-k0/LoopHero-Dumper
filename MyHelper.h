@@ -29,6 +29,16 @@ namespace Misc {
         PrintMessage(c, (gPluginName + ": " + s).c_str());
     }
 
+    void Print(int i, Color c = CLR_DEFAULT)
+    {
+        PrintMessage(c, (gPluginName + ": " + std::to_string(i)).c_str());
+    }
+
+    void Print(const char* s, Color c = CLR_DEFAULT)
+    {
+        PrintMessage(c, (gPluginName + ": " + std::string(s)).c_str());
+    }
+
 
     bool VectorContains(std::string find, std::vector<std::string>* v)
     {
@@ -118,20 +128,34 @@ namespace Misc {
         return ret;
     }
 
-    void PrintArray(YYRValue var)
+    void PrintArray(YYRValue var, Color c = Color::CLR_DEFAULT)
     {
-        RValue gvrval = var.As<RValue>();
+        YYRValue len;
+        YYRValue item;
+        CallBuiltin(len, "array_length_1d", nullptr, nullptr, { var });
+        Misc::Print((int)len);
 
-        const RefDynamicArrayOfRValue* array = reinterpret_cast<const RefDynamicArrayOfRValue*>(gvrval.RefArray);
-
-
-        for (int i = 0; i < array->length; i++) {
-            const RValue& element = array->m_Array[i];
-            if (element.Kind == VALUE_STRING)
-            {
-                Misc::Print(element.String->Get());
-            }
+        for (int i = 0; i < (int)len - 1; i++)
+        {
+            CallBuiltin(item, "array_get", nullptr, nullptr, { var, (double)i });
+            Misc::Print(static_cast<const char*>(item), c);
         }
+    }
+
+    void GetObjectInstanceVariables(YYRValue& arr, int objectType)
+    {
+        YYRValue nearest;
+        CallBuiltin(nearest, "instance_nearest", nullptr, nullptr, { 0.0,0.0,(double)objectType });
+        Misc::Print((int)nearest);
+
+        CallBuiltin(arr, "variable_instance_get_names", nullptr, nullptr, { nearest });
+
+    }
+
+    void GetFirstOfObject(YYRValue& inst, int objType)
+    {    
+        CallBuiltin(inst, "instance_nearest", nullptr, nullptr, { 0.0,0.0,(double)objType });
+        Misc::Print((int)inst);
     }
 
     const RefDynamicArrayOfRValue* ResolveArray(YYRValue var)

@@ -5,11 +5,13 @@
 #include "MyHelper.h"
 #include "Assets.h"
 #include "LHSprites.h"
+#include "LHObjects.h"
 // Plugin functionality
 #include <fstream>
 #include <iterator>
 #include <map>
 #include <iostream>
+
 
 #define _CRT_SECURE_NO_WARNINGS
 
@@ -124,6 +126,72 @@ void dumpSpriteIDs()
 
 }
 
+void enableDebug()
+{
+    Misc::CallBuiltin("show_debug_overlay", nullptr, nullptr, {1.0});
+}
+
+void arrayShit()
+{
+    YYRValue arr;
+    CallBuiltin(arr, "array_create", nullptr, nullptr, { 5.0, 69.0 });
+
+    Misc::Print((int)arr);
+    YYRValue len;
+    CallBuiltin(len, "array_length_1d", nullptr, nullptr, {arr});
+
+    Misc::Print((int)len);
+
+    YYRValue item;
+    CallBuiltin(item, "array_get", nullptr, nullptr, { arr, 0.0 });
+
+    Misc::Print((int)item);
+
+
+    // get global arr
+    YYRValue globalVars;
+    std::vector<YYRValue> globalVarArgs;
+    globalVarArgs.push_back(-5.0);
+    CallBuiltin(globalVars, "variable_instance_get_names", nullptr, nullptr, globalVarArgs);
+
+    CallBuiltin(len, "array_length_1d", nullptr, nullptr, { globalVars });
+    Misc::Print((int)len);
+    
+    for (int i = 0; i < (int)len - 1; i++)
+    {
+        CallBuiltin(item, "array_get", nullptr, nullptr, { globalVars, (double)i });
+        Misc::Print(static_cast<const char*>(item));
+    }
+
+    // Get all vars of buttons
+    YYRValue nearest;
+    CallBuiltin(nearest, "instance_nearest", nullptr, nullptr, { 0.0,0.0,(double)LHObjectEnum::o_opt_lang_button });
+    Misc::Print((int)nearest);
+
+    CallBuiltin(globalVars, "variable_instance_get_names", nullptr, nullptr, {nearest});
+
+    Misc::PrintArray(globalVars, Color::CLR_AQUA);
+    
+}
+
+void dumpVars()
+{
+    Misc::Print("Dumping shit:");
+    YYRValue vars;
+    //Misc::GetObjectInstanceVariables(vars, LHObjectEnum::o_camp_build_button);
+    //Misc::PrintArray(vars, Color::CLR_BRIGHTPURPLE);
+
+    YYRValue obj;
+    Misc::GetFirstOfObject(obj, LHObjectEnum::o_camp_build_button);
+    // show text
+    YYRValue text;
+    CallBuiltin(text, "variable_instance_get", nullptr, nullptr, { obj, "text" });
+
+    Misc::Print(static_cast<const char*>(text), Color::CLR_GOLD);
+
+    CallBuiltin(text, "variable_instance_set", nullptr, nullptr, { obj, "text", "ayo lmao" });
+}
+
 // Unload
 YYTKStatus PluginUnload()
 {
@@ -147,45 +215,30 @@ YYTKStatus ExecuteCodeCallback(YYTKCodeEvent* codeEvent, void*)
         return YYTK_INVALIDARG;
 
 
-    if (Misc::StringHasSubstr(codeObj->i_pName, "gml_Room_"))
+    if ( Misc::StringHasSubstr(codeObj->i_pName, "o_card") && Misc::StringHasSubstr(codeObj->i_pName, "gml_Object") && (Misc::StringHasSubstr(codeObj->i_pName, "create") || Misc::StringHasSubstr(codeObj->i_pName, "Create")))
     {
-        Misc::Print("Room Change: " + std::string(codeObj->i_pName));
+
+        // Dump
         
-        /*YYRValue gamespeed;
-        CallBuiltin(gamespeed, "game_get_speed", selfInst, otherInst, {0.0});
-
-        Misc::Print("Gamespeed: " + std::to_string(static_cast<double>(gamespeed)));
-
-        YYRValue gamespeedmillis;
-        CallBuiltin(gamespeedmillis, "game_get_speed", selfInst, otherInst, { 1.0 });
-
-        Misc::Print("Gamespeed: " + std::to_string(static_cast<double>(gamespeedmillis)));
-        
-        Misc::CallBuiltin("game_set_speed", selfInst, otherInst, { 1.0, 1.0 });
-
-        active = true;*/
-    }
-    if (Misc::StringHasSubstr(codeObj->i_pName, "gml_Object") && (Misc::StringHasSubstr(codeObj->i_pName, "create") || Misc::StringHasSubstr(codeObj->i_pName, "Create")))
-    {
-        if(active)
-        {
-            Misc::Print(codeObj->i_pName + std::string(" ") + std::to_string(selfInst->i_id) );
-            Misc::AddToVectorNoDuplicates(codeObj->i_pName, &obj_create_events);     
-        }
-    }if(Misc::StringHasSubstr(codeObj->i_pName, "gml_Object_o_tweener"))
-    {
         /*
-        YYRValue arrayvars = Misc::CallBuiltin("variable_instance_get_names", selfInst, otherInst, { 100136.0 });
+        YYRValue nearest;
+        CallBuiltin(nearest, "instance_nearest", nullptr, nullptr, { 0.0,0.0,(double)LHObjectEnum::o_hero });
+        
+        YYRValue spd;
+        CallBuiltin(spd, "variable_instance_get", selfInst, otherInst, {nearest, "spd"});
 
-        YYRValue arraylen = Misc::CallBuiltin("array_length", selfInst, otherInst, { arrayvars });
-        Misc::Print(std::to_string(static_cast<double>(arraylen)), Color::CLR_RED);
-
-        //YYRValue first = Misc::CallBuiltin("array_first", selfInst, otherInst, { arrayvars });
-
-        //Misc::Print(std::to_string(static_cast<double>(first)), Color::CLR_RED);
+        Misc::Print((int)spd, Color::CLR_GOLD);
         */
     }
+
+    if (Misc::StringHasSubstr(codeObj->i_pName, "gml_Object") && (Misc::StringHasSubstr(codeObj->i_pName, "create") || Misc::StringHasSubstr(codeObj->i_pName, "Create")))
+    {
+        
+        PrintMessage(CLR_DEFAULT, "%s SpriteID: %d", codeObj->i_pName, selfInst->i_spriteindex);
+ 
+    }
     
+
 
     return YYTK_OK;
 }
@@ -203,7 +256,7 @@ DllExport YYTKStatus PluginEntry(
     PluginAttributes_t* pluginAttributes = nullptr;
     if (PmGetPluginAttributes(gThisPlugin, pluginAttributes) == YYTK_OK)
     {
-       // PmCreateCallback(pluginAttributes, callbackAttr, reinterpret_cast<FNEventHandler>(ExecuteCodeCallback), EVT_CODE_EXECUTE, nullptr);
+        PmCreateCallback(pluginAttributes, callbackAttr, reinterpret_cast<FNEventHandler>(ExecuteCodeCallback), EVT_CODE_EXECUTE, nullptr);
     }
 
 
@@ -243,18 +296,22 @@ DWORD WINAPI Menu(HINSTANCE hModule)
         }
         if (GetAsyncKeyState(VK_NUMPAD4))
         {
-            Misc::Print("Loading ext sprite");
-            addExternalSprite();
+            Misc::Print("Turning on Debug mode");
+            enableDebug();
             Sleep(300);
         }
         if (GetAsyncKeyState(VK_NUMPAD5))
         {
-            YYRValue r;
-            Misc::Print("Going to musicmaker");
-           CallBuiltin(r,"room_goto", nullptr, nullptr, { 9.0 });
-           Sleep(300);
+            Misc::Print("bruh");
+            arrayShit();
+            Sleep(300);
         }
-        
+        if (GetAsyncKeyState(VK_NUMPAD6))
+        {
+            Misc::Print("dumping var names");
+            dumpVars();
+            Sleep(300);
+        }
     }
 }
 
