@@ -2,6 +2,11 @@
 #include "Filesystem.h"
 #include <SDK.hpp>
 #include <string>
+
+#define INSTANCE_NOONE -4.0
+#define INSTANCE_ALL -3.0
+#define INSTANCE_OTHER -2.0
+#define INSTANCE_SELF -1.0
 // Asset Loading
 namespace Assets {
     // sprite_add(filepath, imgnum, removebg, smooth, xorig, yorig)

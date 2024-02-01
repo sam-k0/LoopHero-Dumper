@@ -135,12 +135,66 @@ namespace Misc {
         CallBuiltin(len, "array_length_1d", nullptr, nullptr, { var });
         Misc::Print((int)len);
 
-        for (int i = 0; i < (int)len - 1; i++)
+        for (int i = 0; i < (int)len ; i++)
         {
             CallBuiltin(item, "array_get", nullptr, nullptr, { var, (double)i });
             Misc::Print(static_cast<const char*>(item), c);
         }
     }
+
+    void PrintArrayInstanceVariables(YYRValue var,YYRValue inst, Color c = Color::CLR_DEFAULT)
+    {
+        YYRValue len;
+        YYRValue item;
+        YYRValue content;
+        YYRValue type;
+        CallBuiltin(len, "array_length_1d", nullptr, nullptr, { var });
+        Misc::Print((int)len);
+
+        for (int i = 0; i < (int)len; i++)
+        {
+            CallBuiltin(item, "array_get", nullptr, nullptr, { var, (double)i });
+            CallBuiltin(content, "variable_instance_get", nullptr, nullptr, { inst, static_cast<const char*>(item) });
+            CallBuiltin(type, "typeof", nullptr, nullptr, { content });
+            std::string typestr = std::string(static_cast<const char*>(type));
+           /*/ Misc::Print(std::string(static_cast<const char*>(item)), c); //var name
+            
+            Misc::Print("->" +typestr);
+
+            if (typestr == "number")
+            {
+                Misc::Print("->"+std::to_string((int)content));
+            }
+            else
+            if (typestr == "bool")
+            {
+                Misc::Print("->" + std::to_string(int((bool)content)));
+            }
+            else if (typestr == "string")
+            {
+                Misc::Print("->" + std::string(static_cast<const char*>(content)));
+            }
+            */
+
+            std::string message = std::string(static_cast<const char*>(item)) + " -> " + std::string(static_cast<const char*>(type));
+
+            if (typestr == "number")
+            {
+                message += " : " + std::to_string((int)content);
+            }
+            else if (typestr == "bool")
+            {
+                message += " : " + std::to_string(int((bool)content));
+            }
+            else if (typestr == "string")
+            {
+                message += " : " + std::string(static_cast<const char*>(content));
+            }
+
+            Misc::Print(message);            
+        }
+    }
+
 
     void GetObjectInstanceVariables(YYRValue& arr, int objectType)
     {
@@ -150,6 +204,11 @@ namespace Misc {
 
         CallBuiltin(arr, "variable_instance_get_names", nullptr, nullptr, { nearest });
 
+    }
+
+    void GetInstanceVariables(YYRValue& arr, YYRValue inst)
+    {
+        CallBuiltin(arr, "variable_instance_get_names", nullptr, nullptr, { inst });
     }
 
     void GetFirstOfObject(YYRValue& inst, int objType)

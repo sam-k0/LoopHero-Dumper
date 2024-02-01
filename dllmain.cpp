@@ -15,6 +15,11 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
+
+std::vector<YYRValue> SwapCards;
+int swapCooldown = 60;
+CallbackAttributes_t* frameCallbackAttr;
+
 bool active = false;
 
 void addExternalSprite()
@@ -192,11 +197,52 @@ void dumpVars()
     CallBuiltin(text, "variable_instance_set", nullptr, nullptr, { obj, "text", "ayo lmao" });
 }
 
+void printAllObjects()
+{
+    YYRValue allObjs;
+    YYRValue iid;
+    YYRValue arr;
+    CallBuiltin(allObjs, "instance_number", nullptr, nullptr, { INSTANCE_ALL });
+    // ic = instance_count(all)
+    // instance_id_get(ic-1)
+    for (int i = 0; i < ((int)allObjs) - 1; i++)
+    {
+        CallBuiltin(iid, "instance_id_get", nullptr, nullptr, { (double)i });
+        Misc::GetInstanceVariables(arr, iid);
+        Misc::Print("______________");
+        Misc::PrintArray(arr);
+    }
+    
+}
+
+
+void getObjectAtMousePos()
+{
+    YYRValue mx = Misc::CallBuiltin("device_mouse_x", nullptr, nullptr, { 0.0 });
+    YYRValue my = Misc::CallBuiltin("device_mouse_y", nullptr, nullptr, { 0.0 });
+    
+    YYRValue obj = Misc::CallBuiltin("instance_nearest", nullptr, nullptr, {mx, my, INSTANCE_ALL });
+
+    YYRValue arr;
+    Misc::GetInstanceVariables(arr, obj);
+    Misc::Print("______________" + std::to_string((int)obj), Color::CLR_AQUA);
+    Misc::PrintArrayInstanceVariables(arr,obj, Color::CLR_AQUA);
+}
+
 // Unload
 YYTKStatus PluginUnload()
 {
     PmRemoveCallback(callbackAttr);
 
+    return YYTK_OK;
+}
+
+YYTKStatus FrameCallback(YYTKEventBase* pEvent, void* optArgument)
+{
+    if (swapCooldown > 0)
+    {
+        swapCooldown -= 1;
+    }    
     return YYTK_OK;
 }
 
@@ -214,29 +260,82 @@ YYTKStatus ExecuteCodeCallback(YYTKCodeEvent* codeEvent, void*)
     if (!codeObj->i_pName)
         return YYTK_INVALIDARG;
 
-
-    if ( Misc::StringHasSubstr(codeObj->i_pName, "o_card") && Misc::StringHasSubstr(codeObj->i_pName, "gml_Object") && (Misc::StringHasSubstr(codeObj->i_pName, "create") || Misc::StringHasSubstr(codeObj->i_pName, "Create")))
+    if (Misc::StringHasSubstr(codeObj->i_pName, "gml_Room_rm_game_Create"))
     {
-
-        // Dump
-        
-        /*
-        YYRValue nearest;
-        CallBuiltin(nearest, "instance_nearest", nullptr, nullptr, { 0.0,0.0,(double)LHObjectEnum::o_hero });
-        
-        YYRValue spd;
-        CallBuiltin(spd, "variable_instance_get", selfInst, otherInst, {nearest, "spd"});
-
-        Misc::Print((int)spd, Color::CLR_GOLD);
-        */
+        SwapCards.clear();
     }
 
-    if (Misc::StringHasSubstr(codeObj->i_pName, "gml_Object") && (Misc::StringHasSubstr(codeObj->i_pName, "create") || Misc::StringHasSubstr(codeObj->i_pName, "Create")))
+    if (Misc::StringHasSubstr(codeObj->i_pName, "o_menu_Draw_0"))
+    {
+        for (int i = 0; i < SwapCards.size(); i++)
+        {
+            double dx = Misc::CallBuiltin("variable_instance_get", nullptr, nullptr, { SwapCards[i], "xx"});
+            double dy = Misc::CallBuiltin("variable_instance_get", nullptr, nullptr, { SwapCards[i], "yy" });
+
+            YYRValue sprite = Misc::CallBuiltin("variable_instance_get", nullptr, nullptr, { SwapCards[i], "sprite_index" });
+            double sw, sh;
+            Assets::GetSpriteDimensions((double)sprite, sw, sh);
+            Misc::CallBuiltin("draw_rectangle", nullptr, nullptr, {dx, dy, dx+sw,dy-sh, 1.0});
+
+        }
+    }
+
+    // Left mouse
+    if ( Misc::StringHasSubstr(codeObj->i_pName, "o_card") && Misc::StringHasSubstr(codeObj->i_pName, "gml_Object") && Misc::StringHasSubstr(codeObj->i_pName, "Mouse_56"))
+    {       
+        YYRValue mx = Misc::CallBuiltin("device_mouse_x", nullptr, nullptr, { 0.0 });
+        YYRValue my = Misc::CallBuiltin("device_mouse_y", nullptr, nullptr, { 0.0 });            
+        YYRValue cardid = Misc::CallBuiltin("instance_place", selfInst, otherInst, { double(mx)-16, my, (double)LHObjectEnum::o_card });
+           
+
+        if ((int)cardid == INSTANCE_NOONE || (swapCooldown > 0))
+        {
+            return YYTK_OK;            
+        }
+
+        Misc::Print("Picked up: " + std::to_string(int(cardid)));
+        Misc::Print("Len is : " + std::to_string(SwapCards.size()));
+        // Clear vector
+        SwapCards.clear();
+        SwapCards.push_back(cardid);
+    }
+    // Right mouse
+    if (Misc::StringHasSubstr(codeObj->i_pName, "o_card") && Misc::StringHasSubstr(codeObj->i_pName, "gml_Object") && Misc::StringHasSubstr(codeObj->i_pName, "Mouse_54"))
+    {
+        YYRValue mx = Misc::CallBuiltin("device_mouse_x", nullptr, nullptr, { 0.0 });
+        YYRValue my = Misc::CallBuiltin("device_mouse_y", nullptr, nullptr, { 0.0 });
+        YYRValue cardid = Misc::CallBuiltin("instance_place", selfInst, otherInst, { double(mx)-16, my, (double)LHObjectEnum::o_card });
+        if ((int)cardid == INSTANCE_NOONE || (swapCooldown > 0) || SwapCards.empty())
+        {
+            return YYTK_OK;
+        }
+
+        Misc::Print("Picked up: " + std::to_string(int(cardid)));
+        SwapCards.push_back(cardid);
+        Misc::Print("Len is : " + std::to_string(SwapCards.size()));
+        //swap
+        Misc::Print("swap: " + std::to_string(int(SwapCards[0])) + "/" + std::to_string(int(SwapCards[1])));
+
+        // check if they still exist
+        if (double(Misc::CallBuiltin("instance_exists", nullptr, nullptr, { SwapCards[0] })) == 1.0
+            && double(Misc::CallBuiltin("instance_exists", nullptr, nullptr, { SwapCards[1] })) == 1.0)
+        {
+            // get vars
+            YYRValue firstnum = Misc::CallBuiltin("variable_instance_get", nullptr, nullptr, { SwapCards[0] , "card_number" });
+            YYRValue secondnum = Misc::CallBuiltin("variable_instance_get", nullptr, nullptr, { SwapCards[1] , "card_number" });
+            Misc::Print("nums: " + std::to_string(int(firstnum)) + "/" + std::to_string(int(secondnum)));
+            Misc::CallBuiltin("variable_instance_set", nullptr, nullptr, { SwapCards[0] , "card_number", secondnum });
+            Misc::CallBuiltin("variable_instance_set", nullptr, nullptr, { SwapCards[1] , "card_number", firstnum});
+        }
+
+        SwapCards.clear();
+    }
+    /*if (Misc::StringHasSubstr(codeObj->i_pName, "gml_Object") && (Misc::StringHasSubstr(codeObj->i_pName, "create") || Misc::StringHasSubstr(codeObj->i_pName, "Create")))
     {
         
         PrintMessage(CLR_DEFAULT, "%s SpriteID: %d", codeObj->i_pName, selfInst->i_spriteindex);
  
-    }
+    }*/
     
 
 
@@ -257,8 +356,8 @@ DllExport YYTKStatus PluginEntry(
     if (PmGetPluginAttributes(gThisPlugin, pluginAttributes) == YYTK_OK)
     {
         PmCreateCallback(pluginAttributes, callbackAttr, reinterpret_cast<FNEventHandler>(ExecuteCodeCallback), EVT_CODE_EXECUTE, nullptr);
+        PmCreateCallback(pluginAttributes, frameCallbackAttr, FrameCallback, static_cast<EventType>(EVT_PRESENT | EVT_ENDSCENE), nullptr);
     }
-
 
     // Initialize the plugin, set callbacks inside the PluginObject.
     // Set-up buffers.
@@ -309,7 +408,13 @@ DWORD WINAPI Menu(HINSTANCE hModule)
         if (GetAsyncKeyState(VK_NUMPAD6))
         {
             Misc::Print("dumping var names");
-            dumpVars();
+            printAllObjects();
+            Sleep(300);
+        }
+        if (GetAsyncKeyState(VK_NUMPAD7))
+        {
+            Misc::Print("obj at pos");
+            getObjectAtMousePos();
             Sleep(300);
         }
     }
