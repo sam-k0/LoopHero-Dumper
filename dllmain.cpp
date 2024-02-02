@@ -20,6 +20,8 @@ std::vector<YYRValue> SwapCards;
 int swapCooldown = 60;
 CallbackAttributes_t* frameCallbackAttr;
 
+int lastSurf = -1;
+
 bool active = false;
 
 void addExternalSprite()
@@ -136,46 +138,17 @@ void enableDebug()
     Misc::CallBuiltin("show_debug_overlay", nullptr, nullptr, {1.0});
 }
 
-void arrayShit()
+void arrayShit(int iid, std::string arrname)
 {
-    YYRValue arr;
-    CallBuiltin(arr, "array_create", nullptr, nullptr, { 5.0, 69.0 });
-
-    Misc::Print((int)arr);
-    YYRValue len;
-    CallBuiltin(len, "array_length_1d", nullptr, nullptr, {arr});
-
-    Misc::Print((int)len);
-
-    YYRValue item;
-    CallBuiltin(item, "array_get", nullptr, nullptr, { arr, 0.0 });
-
-    Misc::Print((int)item);
-
-
-    // get global arr
-    YYRValue globalVars;
-    std::vector<YYRValue> globalVarArgs;
-    globalVarArgs.push_back(-5.0);
-    CallBuiltin(globalVars, "variable_instance_get_names", nullptr, nullptr, globalVarArgs);
-
-    CallBuiltin(len, "array_length_1d", nullptr, nullptr, { globalVars });
-    Misc::Print((int)len);
-    
-    for (int i = 0; i < (int)len - 1; i++)
+    YYRValue type;
+    YYRValue arr = Misc::CallBuiltin("variable_instance_get", nullptr, nullptr, { double(iid), arrname });
+    CallBuiltin(type, "typeof", nullptr, nullptr, { arr });
+    std::string typestr = std::string(static_cast<const char*>(type));
+    if (typestr == "array")
     {
-        CallBuiltin(item, "array_get", nullptr, nullptr, { globalVars, (double)i });
-        Misc::Print(static_cast<const char*>(item));
+        Misc::PrintArray(arr);
     }
-
-    // Get all vars of buttons
-    YYRValue nearest;
-    CallBuiltin(nearest, "instance_nearest", nullptr, nullptr, { 0.0,0.0,(double)LHObjectEnum::o_opt_lang_button });
-    Misc::Print((int)nearest);
-
-    CallBuiltin(globalVars, "variable_instance_get_names", nullptr, nullptr, {nearest});
-
-    Misc::PrintArray(globalVars, Color::CLR_AQUA);
+   
     
 }
 
@@ -259,10 +232,54 @@ YYTKStatus ExecuteCodeCallback(YYTKCodeEvent* codeEvent, void*)
 
     if (!codeObj->i_pName)
         return YYTK_INVALIDARG;
-
+    
     if (Misc::StringHasSubstr(codeObj->i_pName, "gml_Room_rm_game_Create"))
     {
         SwapCards.clear();
+    }
+
+    if (Misc::StringHasSubstr(codeObj->i_pName, "statistik_Draw_0"))
+    {
+        //PrintMessage(CLR_DEFAULT, "%s SpriteID: %d", codeObj->i_pName, selfInst->i_spriteindex);
+        // Check if surf exists, free it, create new, assign
+        YYRValue statsPanel = Misc::CallBuiltinA("instance_nearest", {32.0,32.0,double(LHObjectEnum::o_camp_statistik)});
+        YYRValue origsurf = Misc::CallBuiltinA("variable_instance_get", {statsPanel, "statsurf"});
+        Misc::CallBuiltinA("variable_instance_set", { statsPanel, "text","Playing modded" });
+        if ((int)origsurf != lastSurf)
+        {
+            YYRValue exists = Misc::CallBuiltinA("surface_exists", { origsurf });
+            if ((bool)exists == true) //Draw
+            {
+                //Misc::Print("surf exists");
+                if ((bool)Misc::CallBuiltinA("surface_set_target", { origsurf }) == true)
+                {
+                    // save orig draw vars
+                    YYRValue halign = Misc::CallBuiltinA("draw_get_halign", {  });
+                    YYRValue font = Misc::CallBuiltinA("draw_get_font", {});
+                    // get surf vars
+                    YYRValue surfw = Misc::CallBuiltinA("surface_get_width", { origsurf });
+                    YYRValue surfh = Misc::CallBuiltinA("surface_get_height", { origsurf });
+
+                    // draw
+                    Misc::CallBuiltinA("draw_set_font", { 1.0 });
+
+                    YYRValue col = Misc::CallBuiltinA("make_color_rgb", {96.,34.,23.});
+                    Misc::CallBuiltinA("draw_set_color", { col });
+                    Misc::CallBuiltinA("draw_rectangle", { 0.0,0.0,surfw, surfh, 0.0 });
+                    
+                    col = Misc::CallBuiltinA("make_color_rgb", { 255.,255.,255. });
+                    Misc::CallBuiltinA("draw_set_color", { 16777215.0 });
+                    Misc::CallBuiltinA("draw_set_halign", { 0.0 });
+                    Misc::CallBuiltinA("draw_text_transformed", {32.,32.,"Hello from mods!",1.0,1.0,0.0 });
+                    // reset
+                    Misc::CallBuiltinA("surface_reset_target", { });
+                    Misc::CallBuiltinA("draw_set_halign", {halign});
+                    Misc::CallBuiltinA("draw_set_font", { font });
+                }
+            }
+        }
+        lastSurf = (int)origsurf;
+        
     }
 
     if (Misc::StringHasSubstr(codeObj->i_pName, "o_menu_Draw_0"))
@@ -402,7 +419,9 @@ DWORD WINAPI Menu(HINSTANCE hModule)
         if (GetAsyncKeyState(VK_NUMPAD5))
         {
             Misc::Print("bruh");
-            arrayShit();
+            YYRValue iid = Misc::CallBuiltin("get_integer", nullptr, nullptr, { "instance id", 0.0 });
+            YYRValue str = Misc::CallBuiltin("get_string", nullptr, nullptr, { "var name", "text" });
+            arrayShit(iid, str);
             Sleep(300);
         }
         if (GetAsyncKeyState(VK_NUMPAD6))

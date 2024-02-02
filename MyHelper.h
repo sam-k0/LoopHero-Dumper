@@ -230,4 +230,11 @@ namespace Misc {
         CallBuiltin(var, name, self, other, args);
         return var;
     }
+
+    YYRValue CallBuiltinA(const std::string name, const std::vector<YYRValue> args)
+    {
+        YYRValue var;
+        CallBuiltin(var, name, nullptr, nullptr, args);
+        return var;
+    }
 }
