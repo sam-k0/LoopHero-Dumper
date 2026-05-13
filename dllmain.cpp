@@ -15,6 +15,7 @@
 #include <format>
 #include <regex>
 #include <deque>
+#include <algorithm>
 
 #include "VariableNames.h"
 #include "Helpers.h"
@@ -586,7 +587,7 @@ YYTKStatus FrameCallback(YYTKEventBase* pEvent, void* optArgument)
                 if (RunCommand(cmd))
                 {
                     // Avoid duplicate of last command
-                    if (g_commandHistory.empty() || g_commandHistory.back() != cmd)
+                    if (g_commandHistory.empty() || std::find(g_commandHistory.begin(), g_commandHistory.end(), cmd) == g_commandHistory.end())
                     {
                         g_commandHistory.push_back(cmd);
 
@@ -620,14 +621,14 @@ YYTKStatus FrameCallback(YYTKEventBase* pEvent, void* optArgument)
 
             YYRValue mx = Binds::CallBuiltin("device_mouse_x", nullptr, nullptr, { 0.0 });
             YYRValue my = Binds::CallBuiltin("device_mouse_y", nullptr, nullptr, { 0.0 });
-            YYRValue obj = Binds::CallBuiltin("instance_nearest", nullptr, nullptr, { mx, my, INSTANCE_ALL });
-            YYRValue oi = Binds::CallBuiltinA("variable_instance_get", { obj, "object_index" });
+            YYRValue objref = Binds::CallBuiltin("instance_nearest", nullptr, nullptr, { mx, my, INSTANCE_ALL });
+            YYRValue oi = Binds::CallBuiltinA("variable_instance_get", { objref, "object_index" });
             
             double objIndex = static_cast<double>(oi);
-            double instid = static_cast<double>(obj);
+            double instid = static_cast<double>(objref);
             ImGui::Text("ObjectName: %s", LHObjects::GetObjectName(objIndex));
-            ImGui::Text("ObjectIndex: %d", objIndex);
-            ImGui::Text("InstanceID: %d", instid);
+            ImGui::Text("ObjectIndex: %d", (int)objIndex);
+            ImGui::Text("InstanceID: %d", (int)instid);
             ImGui::End();
         }
 
@@ -694,6 +695,35 @@ int ExecuteCodeCallback(YYTKCodeEvent* codeEvent, void*)
         {
             Misc::Print(std::format("Filtered Evt: {}", codeObj->i_pName));
         }
+    }
+
+    if (strcmp(codeObj->i_pName, "gml_Object_oCloudSaves_Other_62") == 0)
+    {
+		Misc::Print("Cloud save event triggered");
+
+        // Dump async_load dsmap content
+
+        const char* keys[] =
+        {
+            "id",
+            "status",
+            "result",
+            "url",
+            "filename",
+            "http_status",
+            "contentLength",
+            "sizeDownloaded"
+        };
+
+		YYRValue asyncLoadMap = Binds::CallBuiltinA("variable_instance_get", { selfInst, "async_load" });
+
+		for (const char* key : keys)
+        {
+            YYRValue value = Binds::CallBuiltinA("ds_map_find_value", { asyncLoadMap, key });
+
+            Misc::Print(std::format("async_load[{}]: {}", key, YYRValueToString(value)));
+        }
+
     }
 
     /*if (strcmp(codeObj->i_pName, "gml_Object_o_camp_statistik_Create_0") == 0)

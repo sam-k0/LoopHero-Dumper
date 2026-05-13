@@ -235,6 +235,21 @@ std::vector<VarInfo> FetchInstanceVariablesSafe(double inst, bool& exists)
     return result;
 }
 
+std::string YYRValueToString(const YYRValue& val)
+{
+    YYRValue type;
+    CallBuiltin(type, "typeof", nullptr, nullptr, { val });
+    std::string typeStr = DCS(type);
+    if (typeStr == "number")
+        return std::to_string(double(val));
+    else if (typeStr == "bool")
+        return bool(val) ? "true" : "false";
+    else if (typeStr == "string")
+        return DCS(val);
+    else
+        return "<unknown>";
+}
+
 void FetchInstanceVarsDumpFile(double index, bool isobject, bool dumpparsable, const char* filename)
 {
 
