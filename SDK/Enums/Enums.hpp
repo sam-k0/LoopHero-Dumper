@@ -37,6 +37,7 @@ enum class EJSRetValBool {
 
 enum YYTKStatus : int
 {
+	YYTK_DONTCALL = -1,			// The function shouldn't be called, see documentation.
 	YYTK_OK = 0,				// The operation completed successfully.
 	YYTK_FAIL = 1,				// Unspecified error occured, see documentation.
 	YYTK_INVALIDARG = 2,		// One or more arguments were invalid, see documentation.

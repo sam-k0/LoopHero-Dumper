@@ -276,24 +276,3 @@ namespace Misc {
     }
 
 }
-
-namespace Binds {
-    void GetInstanceVariables(YYRValue& arr, YYRValue inst)
-    {
-        CallBuiltin(arr, "variable_instance_get_names", nullptr, nullptr, { inst });
-    }
-
-    YYRValue CallBuiltin(const std::string name, CInstance* self, CInstance* other, const std::vector<YYRValue> args)
-    {
-        YYRValue var;
-        CallBuiltin(var, name, self, other, args);
-        return var;
-    }
-
-    YYRValue CallBuiltinA(const std::string name, const std::vector<YYRValue> args)
-    {
-        YYRValue var;
-        CallBuiltin(var, name, nullptr, nullptr, args);
-        return var;
-    }
-}

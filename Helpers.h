@@ -3,6 +3,29 @@
 #include <vector>
 #include <regex>
 #include <sstream>
+#include "SDK/SDK.hpp"
+
+namespace Binds {
+    void GetInstanceVariables(YYRValue& arr, YYRValue inst)
+    {
+        CallBuiltin(arr, "variable_instance_get_names", nullptr, nullptr, { inst });
+    }
+
+    YYRValue CallBuiltin(const std::string name, CInstance* self, CInstance* other, const std::vector<YYRValue> args)
+    {
+        YYRValue var;
+        CallBuiltin(var, name, self, other, args);
+        return var;
+    }
+
+    YYRValue CallBuiltinA(const std::string name, const std::vector<YYRValue> args)
+    {
+        YYRValue var;
+        CallBuiltin(var, name, nullptr, nullptr, args);
+        return var;
+    }
+}
+
 
 static std::vector<std::string> Tokenize(const std::string& ref)
 {
@@ -229,8 +252,6 @@ std::vector<VarInfo> FetchInstanceVariablesSafe(double inst, bool& exists)
         {
             result.push_back({ it, "<?type>", "<unset>" });
         }
-
-
     }
     return result;
 }
@@ -246,6 +267,8 @@ std::string YYRValueToString(const YYRValue& val)
         return bool(val) ? "true" : "false";
     else if (typeStr == "string")
         return DCS(val);
+    else if (typeStr == "array")
+		return "<array>";
     else
         return "<unknown>";
 }

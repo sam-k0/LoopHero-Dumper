@@ -19,6 +19,7 @@
 
 #include "VariableNames.h"
 #include "Helpers.h"
+#include "HttpRequests.h"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_dx11.h"
@@ -259,6 +260,20 @@ YYTKStatus FrameCallback(YYTKEventBase* pEvent, void* optArgument)
             if (ImGui::Button("Hide Native Cursor"))
             {
                 ShowCursor(FALSE);
+            }
+            if (ImGui::Button("Show Native Cursor"))
+            {
+                ShowCursor(TRUE);
+            }
+
+            if(ImGui::Button("Send HTTP request"))
+            { 
+                YYRValue headers = HttpRequests::BuildGitHubHeaders();
+                YYRValue response = Binds::CallBuiltinA("http_get", { "https://api.github.com/repos/sam-k0/AssetLoader/releases/latest", "GET",headers, "" });
+
+				Misc::Print(YYRValueToString(response));
+				Binds::CallBuiltinA("ds_map_destroy", { headers });
+				// save the response ID so we can check if its our request or the games own requests in the future if needed
             }
             
            
@@ -629,6 +644,28 @@ YYTKStatus FrameCallback(YYTKEventBase* pEvent, void* optArgument)
             ImGui::Text("ObjectName: %s", LHObjects::GetObjectName(objIndex));
             ImGui::Text("ObjectIndex: %d", (int)objIndex);
             ImGui::Text("InstanceID: %d", (int)instid);
+			ImGui::Separator();
+			// Display all variables of the nearest instance
+			bool exists = true;
+            std::vector<VarInfo> vars = FetchInstanceVariablesSafe(instid, exists);
+            if (exists)
+            {
+                for (const auto& var : vars)
+                {
+                    if (var.value != "<unknown>" || !g_filterShowParsedOnly)
+                    {
+                        ImVec4 col = ImVec4(255, 255, 255, 255);//white default
+                        if (var.type != "number" && var.type != "string" && var.type != "bool")
+                        {
+                            col = ImVec4(255, 0, 0, 255); // red on unparsable
+                        }
+                        ImGui::TextColored(col, "%s (%s): %s",
+                            var.name.c_str(),
+                            var.type.c_str(),
+                            var.value.c_str());
+                    }
+                }
+            }
             ImGui::End();
         }
 
@@ -723,8 +760,14 @@ int ExecuteCodeCallback(YYTKCodeEvent* codeEvent, void*)
 
             Misc::Print(std::format("async_load[{}]: {}", key, YYRValueToString(value)));
         }
+        // Explicitly iterate the ds_map in "result"
+        YYRValue resultMap = Binds::CallBuiltinA("ds_map_exists", { asyncLoadMap, "result" });
+		Misc::Print(YYRValueToString(resultMap));
 
+        // if resultMap[id] is our own request id, we skip the event!
+        return YYTK_DONTCALL;
     }
+
 
     /*if (strcmp(codeObj->i_pName, "gml_Object_o_camp_statistik_Create_0") == 0)
     {
@@ -794,6 +837,22 @@ int ExecuteCodeCallback(YYTKCodeEvent* codeEvent, void*)
     return YYTK_OK;
 }
 
+int PostExecuteCodeCallback(YYTKCodeEvent* codeEvent, void*)
+{
+    CCode* codeObj = std::get<CCode*>(codeEvent->Arguments());
+    CInstance* selfInst = std::get<0>(codeEvent->Arguments());
+    CInstance* otherInst = std::get<1>(codeEvent->Arguments());
+    CCode* code = std::get<2>(codeEvent->Arguments());
+
+    // If we have invalid data???
+    if (!codeObj)
+        return YYTK_INVALIDARG;
+
+    if (!codeObj->i_pName)
+        return YYTK_INVALIDARG;
+
+}
+
 
 // Entry
 void InstallPatches()
@@ -801,6 +860,7 @@ void InstallPatches()
     if (LHCore::pInstallPrePatch != nullptr)
     {
         LHCore::pInstallPrePatch(ExecuteCodeCallback);
+        LHCore::pInstallPostPatch(PostExecuteCodeCallback);
         Misc::Print("Installed patch method(s)", CLR_GREEN);
     }
 }

@@ -155,8 +155,17 @@
     <ClInclude Include="LHCore.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="VariableNames.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Helpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HttpRequests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="rm_camp_object_create_events.txt" />
+    <Text Include="README.md" />
   </ItemGroup>
 </Project>

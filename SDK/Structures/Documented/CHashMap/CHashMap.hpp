@@ -1,7 +1,5 @@
 #pragma once
-#ifndef YYSDK_PLUGIN
-#include "../../../../Utils/Hashing/MurMurHash.hpp"
-#endif
+
 struct YYObjectBase;
 
 template <typename Key, typename Value>
