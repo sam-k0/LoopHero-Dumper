@@ -70,6 +70,19 @@ LARGE_INTEGER freq, last;
 float fpsHistory[FPSBUFSIZE] = {};
 int fpsOffset = 0;
 
+// http test
+using HttpCallbackFn = void(*)(const char* responseString, int statusCode, int httpStatus);
+using API_HttpGetRequestProto = void(*)(const char*, HttpCallbackFn, double);
+
+API_HttpGetRequestProto API_HttpGetRequest = nullptr;
+
+// define a callback function that matches the expected signature
+void MyHttpCallback(const char* responseString, int statusCode, int httpStatus)
+{
+    // Print the response and status codes
+    Misc::Print(std::format("HTTP Response: {}\nStatus Code: {}\nHTTP Status: {}", responseString, statusCode, httpStatus));
+}
+
 
 // Custom WndProc to forward messages to ImGui
 LRESULT CALLBACK MyWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -268,12 +281,7 @@ YYTKStatus FrameCallback(YYTKEventBase* pEvent, void* optArgument)
 
             if(ImGui::Button("Send HTTP request"))
             { 
-                YYRValue headers = HttpRequests::BuildGitHubHeaders();
-                YYRValue response = Binds::CallBuiltinA("http_get", { "https://api.github.com/repos/sam-k0/AssetLoader/releases/latest", "GET",headers, "" });
-
-				Misc::Print(YYRValueToString(response));
-				Binds::CallBuiltinA("ds_map_destroy", { headers });
-				// save the response ID so we can check if its our request or the games own requests in the future if needed
+				API_HttpGetRequest("https://jsonplaceholder.typicode.com/todos/1", MyHttpCallback,-1.);
             }
             
            
@@ -734,9 +742,9 @@ int ExecuteCodeCallback(YYTKCodeEvent* codeEvent, void*)
         }
     }
 
-    if (strcmp(codeObj->i_pName, "gml_Object_oCloudSaves_Other_62") == 0)
+   /* if (strcmp(codeObj->i_pName, "gml_Object_oCloudSaves_Other_62") == 0)
     {
-		Misc::Print("Cloud save event triggered");
+		Misc::Print("-------Cloud save event triggered");
 
         // Dump async_load dsmap content
 
@@ -761,12 +769,21 @@ int ExecuteCodeCallback(YYTKCodeEvent* codeEvent, void*)
             Misc::Print(std::format("async_load[{}]: {}", key, YYRValueToString(value)));
         }
         // Explicitly iterate the ds_map in "result"
-        YYRValue resultMap = Binds::CallBuiltinA("ds_map_exists", { asyncLoadMap, "result" });
-		Misc::Print(YYRValueToString(resultMap));
+        YYRValue resultExists = Binds::CallBuiltinA("ds_map_exists", { asyncLoadMap, "result" });
+		Misc::Print(std::format("result exists: {}", (double)resultExists));
+       
+        Sleep(1000);
+        //if ((double)resultExists == 1.0)
+        {
+            YYRValue resultString = Binds::CallBuiltinA("ds_map_find_value", { asyncLoadMap, "result" });
+            Misc::Print("Result:" + YYRValueToString(resultString));
 
-        // if resultMap[id] is our own request id, we skip the event!
+            Binds::CallBuiltinA("show_message", { resultString });
+
+            // if resultMap[id] is our own request id, we skip the event!
+        }
         return YYTK_DONTCALL;
-    }
+    }*/
 
 
     /*if (strcmp(codeObj->i_pName, "gml_Object_o_camp_statistik_Create_0") == 0)
@@ -862,6 +879,14 @@ void InstallPatches()
         LHCore::pInstallPrePatch(ExecuteCodeCallback);
         LHCore::pInstallPostPatch(PostExecuteCodeCallback);
         Misc::Print("Installed patch method(s)", CLR_GREEN);
+    }
+
+
+	void* pFunc;
+    if (PmGetExported("API_HttpGetRequest", pFunc) == YYTK_OK)
+    {
+		API_HttpGetRequest = reinterpret_cast<API_HttpGetRequestProto>(pFunc);
+        Misc::Print("API_HttpGetRequest imported successfully", CLR_GREEN);
     }
 }
 
